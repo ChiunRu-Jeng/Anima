@@ -1,16 +1,12 @@
-"""Anima Agent — powered by Asgard Skills + Gemini REST API."""
+"""Anima Agent — powered by Asgard Skills + Claude (Anthropic API)."""
 
 import os
-import requests
+from anthropic import Anthropic
 
 from .skill_loader import Skill, load_all_skills
 from .skill_selector import select_skills
 
 _DEFAULT_SKILLS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "skills")
-_GEMINI_URL = (
-    "https://generativelanguage.googleapis.com/v1beta/models"
-    "/{model}:generateContent?key={key}"
-)
 
 _BASE_SYSTEM_PROMPT = """\
 You are Anima, an intelligent assistant backed by Asgard Skills — a curated \
@@ -41,39 +37,24 @@ def _build_system_prompt(relevant_skills: list[Skill]) -> str:
     return _BASE_SYSTEM_PROMPT + "\n\n# Relevant Skills\n\n" + skill_block
 
 
-def _to_gemini_contents(history: list[dict], query: str) -> list[dict]:
-    """Convert history + query into Gemini's contents format."""
-    contents = []
-    for msg in history:
-        role = "model" if msg["role"] == "assistant" else "user"
-        contents.append({"role": role, "parts": [{"text": msg["content"]}]})
-    contents.append({"role": "user", "parts": [{"text": query}]})
-    return contents
-
-
 class AnimaAgent:
-    """Asgard Skills agent powered by Gemini.
+    """Asgard Skills agent powered by Claude.
 
     Args:
         skills_dir: Path to the Asgard Skills directory.
         top_k: Number of skills to inject per turn (default 5).
-        model: Gemini model ID (default: gemini-2.0-flash).
-        api_key: Gemini API key. Falls back to GEMINI_API_KEY env var.
+        model: Claude model ID (default: claude-sonnet-4-6).
+        api_key: Anthropic API key. Falls back to ANTHROPIC_API_KEY env var.
     """
 
     def __init__(
         self,
         skills_dir: str | None = None,
         top_k: int = 5,
-        model: str = "gemini-2.0-flash",
+        model: str = "claude-sonnet-4-6",
         api_key: str | None = None,
     ):
-        self.api_key = api_key or os.environ.get("GEMINI_API_KEY", "")
-        if not self.api_key:
-            raise ValueError(
-                "Gemini API key not found. "
-                "Set GEMINI_API_KEY env var or pass api_key=..."
-            )
+        self.client = Anthropic(api_key=api_key) if api_key else Anthropic()
         self.model = model
         self.skills_dir = skills_dir or _DEFAULT_SKILLS_DIR
         self.top_k = top_k
@@ -97,17 +78,13 @@ class AnimaAgent:
         relevant = select_skills(
             self.skills, query, top_n=self.top_k, category_filter=category_filter
         )
-        system_prompt = _build_system_prompt(relevant)
-        contents = _to_gemini_contents(history or [], query)
+        system = _build_system_prompt(relevant)
+        messages = list(history or []) + [{"role": "user", "content": query}]
 
-        url = _GEMINI_URL.format(model=self.model, key=self.api_key)
-        payload = {
-            "system_instruction": {"parts": [{"text": system_prompt}]},
-            "contents": contents,
-            "generationConfig": {"maxOutputTokens": 4096},
-        }
-
-        resp = requests.post(url, json=payload, timeout=60)
-        resp.raise_for_status()
-        data = resp.json()
-        return data["candidates"][0]["content"]["parts"][0]["text"]
+        response = self.client.messages.create(
+            model=self.model,
+            max_tokens=4096,
+            system=system,
+            messages=messages,
+        )
+        return response.content[0].text
