@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     # App
     app_env: str = "development"
     app_port: int = 8000
+    cors_origins: list[str] = ["*"]
 
 
 settings = Settings()

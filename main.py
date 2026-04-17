@@ -3,18 +3,27 @@
 Unified API bridging Facebook Ads, Google Ads, and QDM website backend.
 """
 import logging
+from contextlib import asynccontextmanager
 
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import router
+from app.integrations.qdm_backend import qdm_client
 from config import settings
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    yield
+    qdm_client.close()
+
 
 app = FastAPI(
     title="Anima Ad Integration API",
@@ -24,11 +33,12 @@ app = FastAPI(
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

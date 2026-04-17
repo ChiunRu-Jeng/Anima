@@ -26,6 +26,9 @@ class QdmClient:
         self._token: str = ""
         self._client = httpx.Client(timeout=30)
 
+    def close(self) -> None:
+        self._client.close()
+
     # ── Auth ──────────────────────────────────────────────────────────────
 
     def _auth_headers(self) -> dict[str, str]:

@@ -5,7 +5,6 @@ import logging
 from typing import Optional
 
 from facebook_business.adobjects.adaccount import AdAccount
-from facebook_business.adobjects.adset import AdSet
 from facebook_business.adobjects.campaign import Campaign
 from facebook_business.api import FacebookAdsApi
 
@@ -14,13 +13,18 @@ from app.models.campaign import AdInsight, CampaignSummary
 
 logger = logging.getLogger(__name__)
 
+_api_initialized = False
+
 
 def _init_api() -> None:
-    FacebookAdsApi.init(
-        app_id=settings.fb_app_id,
-        app_secret=settings.fb_app_secret,
-        access_token=settings.fb_access_token,
-    )
+    global _api_initialized
+    if not _api_initialized:
+        FacebookAdsApi.init(
+            app_id=settings.fb_app_id,
+            app_secret=settings.fb_app_secret,
+            access_token=settings.fb_access_token,
+        )
+        _api_initialized = True
 
 
 def get_campaigns(account_id: Optional[str] = None) -> list[CampaignSummary]:
@@ -46,7 +50,8 @@ def get_campaigns(account_id: Optional[str] = None) -> list[CampaignSummary]:
                 campaign_id=c.get(Campaign.Field.id, ""),
                 campaign_name=c.get(Campaign.Field.name, ""),
                 status=c.get(Campaign.Field.status, ""),
-                budget=float(c.get(Campaign.Field.daily_budget) or c.get(Campaign.Field.lifetime_budget) or 0) / 100,
+                # FB API returns TWD budgets as whole integers (no sub-unit)
+                budget=float(c.get(Campaign.Field.daily_budget) or c.get(Campaign.Field.lifetime_budget) or 0),
             )
         )
     return results

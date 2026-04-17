@@ -12,18 +12,23 @@ from app.models.campaign import AdInsight, CampaignSummary, KeywordStat
 
 logger = logging.getLogger(__name__)
 
+_client: Optional[GoogleAdsClient] = None
 
-def _build_client() -> GoogleAdsClient:
-    credentials = {
-        "developer_token": settings.google_ads_developer_token,
-        "client_id": settings.google_ads_client_id,
-        "client_secret": settings.google_ads_client_secret,
-        "refresh_token": settings.google_ads_refresh_token,
-        "use_proto_plus": True,
-    }
-    if settings.google_ads_login_customer_id:
-        credentials["login_customer_id"] = settings.google_ads_login_customer_id
-    return GoogleAdsClient.load_from_dict(credentials)
+
+def _get_client() -> GoogleAdsClient:
+    global _client
+    if _client is None:
+        credentials = {
+            "developer_token": settings.google_ads_developer_token,
+            "client_id": settings.google_ads_client_id,
+            "client_secret": settings.google_ads_client_secret,
+            "refresh_token": settings.google_ads_refresh_token,
+            "use_proto_plus": True,
+        }
+        if settings.google_ads_login_customer_id:
+            credentials["login_customer_id"] = settings.google_ads_login_customer_id
+        _client = GoogleAdsClient.load_from_dict(credentials)
+    return _client
 
 
 def _customer_id() -> str:
@@ -32,7 +37,7 @@ def _customer_id() -> str:
 
 def get_campaigns(customer_id: Optional[str] = None) -> list[CampaignSummary]:
     """Return all active/paused campaigns for the customer."""
-    client = _build_client()
+    client = _get_client()
     ga_service = client.get_service("GoogleAdsService")
     cid = (customer_id or _customer_id()).replace("-", "")
 
@@ -87,7 +92,7 @@ def get_keyword_stats(
     date_range: str = "LAST_7_DAYS",
 ) -> list[KeywordStat]:
     """Return keyword-level performance stats."""
-    client = _build_client()
+    client = _get_client()
     ga_service = client.get_service("GoogleAdsService")
     cid = (customer_id or _customer_id()).replace("-", "")
 
@@ -136,7 +141,7 @@ def get_daily_insights(
     date_range: str = "LAST_7_DAYS",
 ) -> list[AdInsight]:
     """Return account-level daily insights."""
-    client = _build_client()
+    client = _get_client()
     ga_service = client.get_service("GoogleAdsService")
     cid = (customer_id or _customer_id()).replace("-", "")
 

@@ -1,10 +1,12 @@
 """Unified API routes for all platform integrations."""
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query
+from fastapi.concurrency import run_in_threadpool
 
 from app.integrations import facebook_ads, google_ads, qdm_backend
 from app.models.campaign import (
@@ -153,27 +155,34 @@ def qdm_site_info():
 # ── Unified Dashboard ─────────────────────────────────────────────────────────
 
 @router.get("/dashboard", response_model=DashboardReport, tags=["Dashboard"])
-def dashboard(
+async def dashboard(
     fb_date_preset: str = Query("last_7d"),
     google_date_range: str = Query("LAST_7_DAYS"),
 ):
-    """Aggregate data from all three platforms into a single report."""
+    """Aggregate data from all three platforms into a single report (parallel fetch)."""
+    fb_result, google_result, qdm_result = await asyncio.gather(
+        run_in_threadpool(facebook_ads.get_campaigns),
+        run_in_threadpool(google_ads.get_campaigns),
+        run_in_threadpool(qdm_backend.qdm_client.get_products),
+        return_exceptions=True,
+    )
+
     report = DashboardReport(date_range=fb_date_preset)
 
-    try:
-        report.facebook = facebook_ads.get_campaigns()
-    except Exception as e:
-        logger.warning("Facebook fetch failed: %s", e)
+    if isinstance(fb_result, Exception):
+        logger.warning("Facebook fetch failed: %s", fb_result)
+    else:
+        report.facebook = fb_result
 
-    try:
-        report.google = google_ads.get_campaigns()
-    except Exception as e:
-        logger.warning("Google fetch failed: %s", e)
+    if isinstance(google_result, Exception):
+        logger.warning("Google fetch failed: %s", google_result)
+    else:
+        report.google = google_result
 
-    try:
-        report.qdm_products = qdm_backend.qdm_client.get_products()
-    except Exception as e:
-        logger.warning("QDM fetch failed: %s", e)
+    if isinstance(qdm_result, Exception):
+        logger.warning("QDM fetch failed: %s", qdm_result)
+    else:
+        report.qdm_products = qdm_result
 
     all_campaigns = report.facebook + report.google
     report.total_spend = round(sum(c.spend or 0 for c in all_campaigns), 2)
