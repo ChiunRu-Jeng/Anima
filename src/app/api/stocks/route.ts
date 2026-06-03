@@ -22,6 +22,9 @@ export async function GET(req: NextRequest) {
         if (!meta) return { symbol, error: true }
         const price = meta.regularMarketPrice ?? meta.previousClose
         const prev = meta.previousClose ?? price
+        if (typeof price !== 'number' || typeof prev !== 'number') {
+          return { symbol, error: true }
+        }
         const change = price - prev
         const changePct = prev ? (change / prev) * 100 : 0
         return {

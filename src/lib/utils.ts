@@ -25,26 +25,35 @@ export function formatDate(dateStr: string): string {
   })
 }
 
+function localDateISO(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 export function todayISO(): string {
-  return new Date().toISOString().split('T')[0]
+  return localDateISO(new Date())
 }
 
 export function getStreak(completions: string[]): number {
   if (completions.length === 0) return 0
-  const sorted = [...completions].sort().reverse()
+  const set = new Set(completions)
   const today = todayISO()
-  let streak = 0
-  let check = today
 
-  for (const d of sorted) {
-    if (d === check) {
-      streak++
-      const prev = new Date(check)
-      prev.setDate(prev.getDate() - 1)
-      check = prev.toISOString().split('T')[0]
-    } else if (d < check) {
-      break
-    }
+  // Allow streak if today not yet checked off — start counting from yesterday
+  let check = today
+  if (!set.has(today)) {
+    const yesterday = new Date()
+    yesterday.setDate(yesterday.getDate() - 1)
+    check = localDateISO(yesterday)
+    if (!set.has(check)) return 0
+  }
+
+  let streak = 0
+  while (set.has(check)) {
+    streak++
+    const parts = check.split('-').map(Number)
+    const prev = new Date(parts[0], parts[1] - 1, parts[2])
+    prev.setDate(prev.getDate() - 1)
+    check = localDateISO(prev)
   }
   return streak
 }

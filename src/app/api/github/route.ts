@@ -23,7 +23,11 @@ export async function GET(req: NextRequest) {
     }),
   ])
 
-  if (!userRes.ok) return NextResponse.json({ error: 'User not found' }, { status: 404 })
+  if (!userRes.ok) {
+    const status = userRes.status === 404 ? 404 : 500
+    const error = userRes.status === 404 ? 'User not found' : 'GitHub API error'
+    return NextResponse.json({ error }, { status })
+  }
 
   const user = await userRes.json()
   const events = eventsRes.ok ? await eventsRes.json() : []
@@ -34,7 +38,7 @@ export async function GET(req: NextRequest) {
     .slice(0, 5)
     .map((e) => ({
       repo: e.repo.name,
-      message: e.payload.commits?.[0]?.message?.split('\n')[0] || '',
+      message: e.payload?.commits?.[0]?.message?.split('\n')[0] || '',
       date: e.created_at,
     }))
 

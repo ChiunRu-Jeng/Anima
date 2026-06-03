@@ -32,6 +32,8 @@ export default function StockWidget() {
     try {
       const res = await fetch(`/api/stocks?symbols=${symbols.join(',')}`)
       if (res.ok) setQuotes(await res.json())
+    } catch (err) {
+      console.error('Stock fetch error:', err)
     } finally {
       setLoading(false)
     }

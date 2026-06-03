@@ -34,7 +34,14 @@ export default function WeatherWidget() {
     setLoading(true)
     try {
       const res = await fetch(`/api/weather?city=${encodeURIComponent(c)}`)
-      if (res.ok) setData(await res.json())
+      if (res.ok) {
+        setData(await res.json())
+      } else {
+        setData(null)
+      }
+    } catch (err) {
+      console.error('Weather fetch error:', err)
+      setData(null)
     } finally {
       setLoading(false)
     }
@@ -50,7 +57,7 @@ export default function WeatherWidget() {
     )
   }
 
-  if (!data || 'error' in data) {
+  if (!data) {
     return (
       <div className="flex flex-col gap-2 items-center justify-center h-full px-4">
         <p className="text-[#94a3b8] text-sm text-center">需要設定 OPENWEATHER_API_KEY</p>

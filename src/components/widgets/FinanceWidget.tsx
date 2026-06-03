@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { Plus, Trash2, ChevronLeft, ChevronRight } from 'lucide-react'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { getItem, setItem } from '@/lib/storage'
-import { generateId, formatCurrency } from '@/lib/utils'
+import { generateId, formatCurrency, todayISO } from '@/lib/utils'
 import Modal from '@/components/ui/Modal'
 import type { Expense, ExpenseCategory, Budget } from '@/types'
 
@@ -22,7 +22,7 @@ export default function FinanceWidget() {
   const [budgets, setBudgets] = useState<Budget[]>(DEFAULT_BUDGETS)
   const [tab, setTab] = useState<Tab>('overview')
   const [open, setOpen] = useState(false)
-  const [form, setForm] = useState({ amount: '', category: '餐飲' as ExpenseCategory, description: '', date: new Date().toISOString().split('T')[0] })
+  const [form, setForm] = useState({ amount: '', category: '餐飲' as ExpenseCategory, description: '', date: todayISO() })
   const [monthOffset, setMonthOffset] = useState(0)
 
   useEffect(() => {

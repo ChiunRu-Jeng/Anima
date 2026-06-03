@@ -12,7 +12,7 @@ export default function CalendarWidget() {
   const month = viewDate.getMonth()
   const firstDay = new Date(year, month, 1).getDay()
   const daysInMonth = new Date(year, month + 1, 0).getDate()
-  const todayStr = today.toISOString().split('T')[0]
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
 
   const cells: (number | null)[] = [...Array(firstDay).fill(null), ...Array.from({ length: daysInMonth }, (_, i) => i + 1)]
   while (cells.length % 7 !== 0) cells.push(null)

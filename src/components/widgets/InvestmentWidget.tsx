@@ -35,6 +35,8 @@ export default function InvestmentWidget() {
         for (const q of data) if (!q.error && q.price) map[q.symbol] = q.price
         setPrices(map)
       }
+    } catch (err) {
+      console.error('Investment price fetch error:', err)
     } finally {
       setLoading(false)
     }
