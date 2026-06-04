@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
+import Image from 'next/image'
 import { RefreshCw, Send, Eye, ThumbsUp, TrendingUp, AlertCircle, CheckCircle2, XCircle } from 'lucide-react'
 
 interface FBPage {
@@ -94,7 +95,7 @@ export default function FacebookWidget() {
     if (tab === '社群') fetchPages()
     else if (tab === '廣告') fetchAds()
     else if (tab === '發文' && pages.length === 0) fetchPages()
-  }, [tab]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tab, fetchPages, fetchAds, pages.length])
 
   const togglePage = (id: string) => {
     setSelectedPages(prev => {
@@ -114,9 +115,11 @@ export default function FacebookWidget() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pageIds: Array.from(selectedPages), message }),
       })
-      const data: PublishResult[] = await res.json()
-      setPublishResults(data)
-      if (data.every(r => r.success)) {
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || '發布失敗')
+      const results = data as PublishResult[]
+      setPublishResults(results)
+      if (results.every(r => r.success)) {
         setMessage('')
         setSelectedPages(new Set())
       }
@@ -185,8 +188,7 @@ export default function FacebookWidget() {
               <div key={page.id} className="bg-[#0f172a] rounded-lg p-3">
                 <div className="flex items-center gap-2.5 mb-2.5">
                   {page.picture ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={page.picture} alt={page.name} className="w-8 h-8 rounded-full" />
+                    <Image src={page.picture} alt={page.name} width={32} height={32} className="rounded-full" />
                   ) : (
                     <div className="w-8 h-8 rounded-full bg-[#1877f2] flex items-center justify-center text-sm font-bold text-white shrink-0">
                       {page.name[0]}
@@ -293,8 +295,7 @@ export default function FacebookWidget() {
                         className="w-3.5 h-3.5 accent-[#1877f2] shrink-0"
                       />
                       {page.picture ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={page.picture} alt={page.name} className="w-5 h-5 rounded-full shrink-0" />
+                        <Image src={page.picture} alt={page.name} width={20} height={20} className="rounded-full shrink-0" />
                       ) : (
                         <div className="w-5 h-5 rounded-full bg-[#1877f2] flex items-center justify-center text-[10px] font-bold text-white shrink-0">
                           {page.name[0]}

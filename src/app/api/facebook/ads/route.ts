@@ -10,16 +10,20 @@ export async function GET() {
     return NextResponse.json({ error: 'FB_USER_TOKEN 或 FB_BUSINESS_ID 未設定' }, { status: 503 })
   }
 
-  const acctRes = await fetch(
-    `${GRAPH}/${businessId}/owned_ad_accounts?fields=id,name,account_status,currency&limit=10&access_token=${token}`
-  )
-  if (!acctRes.ok) {
-    const err = await acctRes.json()
-    return NextResponse.json({ error: err.error?.message || '無法取得廣告帳號' }, { status: acctRes.status })
+  let accounts: Record<string, unknown>[] = []
+  try {
+    const acctRes = await fetch(
+      `${GRAPH}/${businessId}/owned_ad_accounts?fields=id,name,account_status,currency&limit=10&access_token=${token}`
+    )
+    if (!acctRes.ok) {
+      const err = await acctRes.json()
+      return NextResponse.json({ error: err.error?.message || '無法取得廣告帳號' }, { status: acctRes.status })
+    }
+    const acctData = await acctRes.json()
+    accounts = acctData.data || []
+  } catch {
+    return NextResponse.json({ error: '無法連線至 Facebook API' }, { status: 500 })
   }
-
-  const acctData = await acctRes.json()
-  const accounts: Record<string, unknown>[] = acctData.data || []
 
   const result = await Promise.all(
     accounts.map(async (acct) => {

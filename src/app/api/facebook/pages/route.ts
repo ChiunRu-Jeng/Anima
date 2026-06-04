@@ -10,16 +10,20 @@ export async function GET() {
     return NextResponse.json({ error: 'FB_USER_TOKEN 或 FB_BUSINESS_ID 未設定' }, { status: 503 })
   }
 
-  const pagesRes = await fetch(
-    `${GRAPH}/${businessId}/owned_pages?fields=id,name,fan_count,followers_count,picture.type(small)&limit=25&access_token=${token}`
-  )
-  if (!pagesRes.ok) {
-    const err = await pagesRes.json()
-    return NextResponse.json({ error: err.error?.message || '無法取得粉專列表' }, { status: pagesRes.status })
+  let pages: Record<string, unknown>[] = []
+  try {
+    const pagesRes = await fetch(
+      `${GRAPH}/${businessId}/owned_pages?fields=id,name,fan_count,followers_count,picture.type(small)&limit=25&access_token=${token}`
+    )
+    if (!pagesRes.ok) {
+      const err = await pagesRes.json()
+      return NextResponse.json({ error: err.error?.message || '無法取得粉專列表' }, { status: pagesRes.status })
+    }
+    const pagesData = await pagesRes.json()
+    pages = pagesData.data || []
+  } catch {
+    return NextResponse.json({ error: '無法連線至 Facebook API' }, { status: 500 })
   }
-
-  const pagesData = await pagesRes.json()
-  const pages: Record<string, unknown>[] = pagesData.data || []
 
   const enriched = await Promise.all(
     pages.map(async (page) => {

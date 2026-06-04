@@ -8,8 +8,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'FB_USER_TOKEN 未設定' }, { status: 503 })
   }
 
-  const { pageIds, message } = await req.json() as { pageIds: string[]; message: string }
-  if (!pageIds?.length || !message?.trim()) {
+  let pageIds: string[] = []
+  let message = ''
+  try {
+    const body = await req.json() as { pageIds?: string[]; message?: string }
+    pageIds = body.pageIds || []
+    message = body.message || ''
+  } catch {
+    return NextResponse.json({ error: '無效的 JSON 請求內容' }, { status: 400 })
+  }
+
+  if (!pageIds.length || !message.trim()) {
     return NextResponse.json({ error: 'pageIds 和 message 為必填' }, { status: 400 })
   }
 
