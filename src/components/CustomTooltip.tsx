@@ -63,7 +63,7 @@ export default function CustomTooltip({
               </span>
               <span
                 className="font-mono font-medium tabular-nums"
-                style={{ color: val === null ? '#6B7280' : normalise && val !== 0 ? (val > 0 ? '#34D399' : '#F87171') : color }}
+                style={{ color: val == null ? '#6B7280' : normalise && val !== 0 ? (val > 0 ? '#34D399' : '#F87171') : color }}
               >
                 {displayVal}
               </span>

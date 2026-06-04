@@ -26,6 +26,11 @@ export function useStockData(): UseStockDataReturn {
 
     if (toFetch.length === 0) return;
 
+    // Mark as in-flight immediately to prevent duplicate requests from concurrent calls
+    for (const sym of toFetch) {
+      fetchedRef.current.add(`${sym}::${interval}`);
+    }
+
     // Mark as loading
     setFetchStatus(prev => {
       const next = { ...prev };
@@ -56,14 +61,18 @@ export function useStockData(): UseStockDataReturn {
 
       setFetchStatus(prev => {
         const next = { ...prev };
-        for (const data of results) {
+        results.forEach((data, idx) => {
           if (data) {
             next[data.symbol] = data.error ? 'error' : 'success';
-            if (!data.error) {
-              fetchedRef.current.add(`${data.symbol}::${interval}`);
+            if (data.error) {
+              // Remove in-flight mark on failure so the user can retry
+              fetchedRef.current.delete(`${data.symbol}::${interval}`);
             }
+          } else {
+            // null result means stock lookup failed
+            fetchedRef.current.delete(`${batch[idx]}::${interval}`);
           }
-        }
+        });
         return next;
       });
     }

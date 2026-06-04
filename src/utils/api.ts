@@ -28,21 +28,29 @@ function parseYahooResponse(data: any, symbol: string, name: string): StockData 
   const volumes: (number | null)[] = quote.volume ?? [];
   const currency: string = result.meta?.currency ?? 'TWD';
 
-  const prices: PricePoint[] = timestamps.map((ts, i) => {
+  const prices: PricePoint[] = [];
+  for (let i = 0; i < timestamps.length; i++) {
+    const ts = timestamps[i];
+    const close = closes[i];
+    if (ts == null || isNaN(ts) || close == null) continue;
     const d = new Date(ts * 1000);
-    const dateStr = d.toISOString().split('T')[0];
-    return {
-      date: dateStr,
+    if (isNaN(d.getTime())) continue;
+    prices.push({
+      date: d.toISOString().split('T')[0],
       timestamp: ts,
       open: opens[i] ?? null,
       high: highs[i] ?? null,
       low: lows[i] ?? null,
-      close: closes[i] ?? null,
+      close,
       volume: volumes[i] ?? null,
-    };
-  }).filter(p => p.close !== null && p.close !== undefined);
+    });
+  }
 
-  const latestClose = [...closes].reverse().find(c => c !== null && c !== undefined) ?? null;
+  let latestClose: number | null = null;
+  for (let i = closes.length - 1; i >= 0; i--) {
+    const c = closes[i];
+    if (c != null) { latestClose = c; break; }
+  }
 
   return {
     symbol,
@@ -55,11 +63,7 @@ function parseYahooResponse(data: any, symbol: string, name: string): StockData 
 
 async function fetchWithFallback(url: string, proxyUrl: string): Promise<Response> {
   try {
-    const res = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0',
-      },
-    });
+    const res = await fetch(url);
     if (res.ok) return res;
     throw new Error(`HTTP ${res.status}`);
   } catch {
