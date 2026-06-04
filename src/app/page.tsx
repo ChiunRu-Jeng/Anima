@@ -1,4 +1,4 @@
-import { CheckSquare, Flame, Target, CloudSun, TrendingUp, Wallet, BookMarked, GitBranch, Calendar, BarChart3 } from 'lucide-react'
+import { CheckSquare, Flame, Target, CloudSun, TrendingUp, Wallet, BookMarked, GitBranch, Calendar, BarChart3, Share2 } from 'lucide-react'
 import Card from '@/components/ui/Card'
 import ClockWidget from '@/components/widgets/ClockWidget'
 import WeatherWidget from '@/components/widgets/WeatherWidget'
@@ -11,6 +11,7 @@ import InvestmentWidget from '@/components/widgets/InvestmentWidget'
 import ArticleWidget from '@/components/widgets/ArticleWidget'
 import GitHubWidget from '@/components/widgets/GitHubWidget'
 import CalendarWidget from '@/components/widgets/CalendarWidget'
+import FacebookWidget from '@/components/widgets/FacebookWidget'
 
 export default function Dashboard() {
   return (
@@ -86,6 +87,13 @@ export default function Dashboard() {
           </Card>
           <Card className="h-72" icon={<Calendar size={14} />} title="日曆">
             <CalendarWidget />
+          </Card>
+        </div>
+
+        {/* Row 4: Facebook */}
+        <div className="grid grid-cols-1 gap-4">
+          <Card className="h-[480px]" icon={<Share2 size={14} />} title="Facebook 社群管理">
+            <FacebookWidget />
           </Card>
         </div>
 
