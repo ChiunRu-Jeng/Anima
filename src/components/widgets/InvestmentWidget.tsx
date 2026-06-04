@@ -53,9 +53,14 @@ export default function InvestmentWidget() {
     return { ...inv, currentPrice, totalCost, totalValue, gainLoss, gainLossPct }
   })
 
-  const totalValue = enriched.reduce((s, i) => s + (i.totalValue ?? i.totalCost), 0)
-  const totalCost = enriched.reduce((s, i) => s + i.totalCost, 0)
-  const totalGain = totalValue - totalCost
+  const byCurrency = enriched.reduce((acc, i) => {
+    const cur = i.currency
+    if (!acc[cur]) acc[cur] = { value: 0, cost: 0 }
+    acc[cur].value += i.totalValue ?? i.totalCost
+    acc[cur].cost += i.totalCost
+    return acc
+  }, {} as Record<string, { value: number; cost: number }>)
+  const currencyEntries = Object.entries(byCurrency)
 
   const add = () => {
     if (!form.symbol || !form.shares || !form.avgCost) return
@@ -78,14 +83,24 @@ export default function InvestmentWidget() {
       <div className="flex flex-col h-full">
         <div className="px-4 py-3 border-b border-[#334155]">
           <div className="flex items-center justify-between">
-            <div>
-              <div className="text-lg font-bold text-[#f1f5f9] tabular-nums">
-                {formatCurrency(totalValue, 'USD')}
-              </div>
-              <div className={`text-sm flex items-center gap-1 ${totalGain >= 0 ? 'text-[#22c55e]' : 'text-[#ef4444]'}`}>
-                {totalGain >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-                {totalGain >= 0 ? '+' : ''}{formatCurrency(totalGain, 'USD')} ({totalCost > 0 ? ((totalGain / totalCost) * 100).toFixed(2) : '0.00'}%)
-              </div>
+            <div className="flex flex-col gap-0.5">
+              {currencyEntries.length === 0 ? (
+                <div className="text-lg font-bold text-[#f1f5f9]">—</div>
+              ) : currencyEntries.map(([cur, { value, cost }]) => {
+                const gain = value - cost
+                const up = gain >= 0
+                return (
+                  <div key={cur}>
+                    <div className="text-lg font-bold text-[#f1f5f9] tabular-nums leading-tight">
+                      {formatCurrency(value, cur as 'USD' | 'TWD')}
+                    </div>
+                    <div className={`text-xs flex items-center gap-1 ${up ? 'text-[#22c55e]' : 'text-[#ef4444]'}`}>
+                      {up ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+                      {up ? '+' : ''}{formatCurrency(gain, cur as 'USD' | 'TWD')} ({cost > 0 ? ((gain / cost) * 100).toFixed(2) : '0.00'}%)
+                    </div>
+                  </div>
+                )
+              })}
             </div>
             <button onClick={() => fetchPrices(investments)} disabled={loading} className="text-[#94a3b8] hover:text-[#f1f5f9] disabled:opacity-40 transition-colors">
               <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />

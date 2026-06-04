@@ -32,6 +32,7 @@ export default function FinanceWidget() {
 
   const targetMonth = useMemo(() => {
     const d = new Date()
+    d.setDate(1) // anchor to 1st before adjusting month to avoid day-of-month overflow
     d.setMonth(d.getMonth() + monthOffset)
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
   }, [monthOffset])
