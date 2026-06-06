@@ -22,7 +22,8 @@ SESSION.headers.update(HEADERS)
 
 def get_last_trading_date() -> datetime:
     now = datetime.now()
-    dt  = now if now.hour >= 14 else now - timedelta(days=1)
+    # TWSE publishes after-market data around 15:30–16:00; use 16:00 as safe cutoff
+    dt  = now if now.hour >= 16 else now - timedelta(days=1)
     while dt.weekday() >= 5:
         dt -= timedelta(days=1)
     return dt
@@ -280,18 +281,32 @@ def fetch_margin_short(stock_no: str = '0050', date: datetime = None) -> dict:
         if not rows:
             return False
         row = rows[-1]
+
+        # Detect column positions from response 'fields'; fall back to known layouts
+        raw_fields = data.get('fields', [])
+        fields = [str(f).replace('\n', '').replace(' ', '') for f in raw_fields]
+
+        def _col(keyword, default):
+            for i, f in enumerate(fields):
+                if keyword in f:
+                    return i
+            return default
+
+        mb_idx  = _col('融資餘額',  4)
+        ml_idx  = _col('融資限額',  5)
+        sb_idx  = _col('融券餘額', 10)
+
         try:
             result.update({
-                'margin_buy':     _parse_num(row[2]),
-                'margin_sell':    _parse_num(row[3]),
-                'margin_balance': _parse_num(row[4]),
-                'margin_limit':   _parse_num(row[5]),
-                'short_sell':     _parse_num(row[8]),
-                'short_buy':      _parse_num(row[9]),
-                'short_balance':  _parse_num(row[10]),
-                'offset':         _parse_num(row[12]),
+                'margin_balance': _parse_num(row[mb_idx]),
+                'margin_limit':   _parse_num(row[ml_idx]),
+                'short_balance':  _parse_num(row[sb_idx]),
             })
-            return True
+            # offset column optional — don't fail if not present
+            off_idx = _col('資券', 12)
+            if off_idx < len(row):
+                result['offset'] = _parse_num(row[off_idx])
+            return result['margin_balance'] != 0 or result['short_balance'] != 0
         except (IndexError, Exception):
             return False
 
