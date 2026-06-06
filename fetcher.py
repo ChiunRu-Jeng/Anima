@@ -259,9 +259,10 @@ def fetch_taifex_institutional() -> dict:
 # ── 5. 融資融券 ───────────────────────────────────────────────────────────────
 
 def fetch_margin_short(stock_no: str = '0050', date: datetime = None) -> dict:
-    dt       = date or get_last_trading_date()
-    date_str = dt.strftime('%Y%m%d')
-    data     = _twse_get(
+    dt = date or get_last_trading_date()
+    # MI_MARGN returns the whole month when given the 1st of the month
+    date_str = dt.strftime('%Y%m01')
+    data = _twse_get(
         'https://www.twse.com.tw/rwd/zh/marginShortselling/MI_MARGN',
         {'date': date_str, 'stockNo': stock_no, 'response': 'json'},
     )
@@ -294,34 +295,45 @@ def fetch_margin_short(stock_no: str = '0050', date: datetime = None) -> dict:
 # ── 6. ETF 淨值 / 折溢價 ──────────────────────────────────────────────────────
 
 def fetch_etf_nav(stock_no: str = '0050') -> dict:
+    """
+    Fetch ETF NAV from TWSE etfDiv endpoint.
+    Uses yfinance for today's close price as cross-check.
+    """
     result = {'nav': None, 'close': None, 'premium_pct': None}
+
+    # Get today's close from yfinance as reference
+    yf_closes = _yf_closes(f'{stock_no}.TW', period='3d')
+    yf_close  = round(yf_closes[-1], 2) if yf_closes else None
+
     try:
         url  = f'https://www.twse.com.tw/rwd/zh/ETF/etfDiv?response=json&stockNo={stock_no}'
         r    = SESSION.get(url, timeout=15)
         data = r.json()
         if data and data.get('data'):
             row = data['data'][0]
-            # Column layout varies; scan all cells for two plausible price values
+            # Scan all cells for price-like floats (valid ETF price: 10–10000 TWD)
             floats = []
             for cell in row:
                 v = _parse_float(str(cell))
-                # Filter: must look like a price (10 ~ 10000 range for 0050)
                 if v is not None and 10 < v < 10_000:
                     floats.append(v)
 
-            if len(floats) >= 2:
-                # The two price-like numbers are close (NAV vs close price)
-                # NAV is usually the smaller one for 0050
-                floats_sorted = sorted(set(floats))
-                nav   = floats_sorted[0]
-                close = floats_sorted[-1]
-                # If they're too far apart, skip — likely wrong columns
-                if abs(close - nav) / nav < 0.05:
+            if floats:
+                # NAV is typically the value closest to yf_close
+                # If no yf_close reference, use the smallest (NAV ≤ close typically)
+                nav = min(floats, key=lambda x: abs(x - yf_close)) if yf_close else min(floats)
+                close = yf_close or max(floats)
+                if abs(close - nav) / nav < 0.05:   # sanity: within 5%
                     result['nav']         = nav
                     result['close']       = close
                     result['premium_pct'] = round((close - nav) / nav * 100, 3)
     except Exception as e:
         print(f"  [WARN] ETF NAV failed: {e}")
+
+    # If TWSE NAV lookup failed but we have yf close, report close only
+    if result['nav'] is None and yf_close:
+        result['close'] = yf_close
+
     return result
 
 
@@ -370,48 +382,59 @@ def fetch_exchange_rate() -> dict:
 # ── 9. 大盤加權指數 ───────────────────────────────────────────────────────────
 
 def fetch_taiex(date: datetime = None) -> dict:
+    """
+    Fetch TAIEX using yfinance (^TWII) as primary source,
+    TWSE MI_INDEX as secondary, stooq ^twii as last resort.
+    """
+    result = {'close': None, 'change': None, 'change_pct': None}
+
+    # Primary: yfinance ^TWII
+    closes = _yf_closes('^TWII', period='5d')
+    if closes and len(closes) >= 2:
+        result['close']      = round(closes[-1], 2)
+        result['change']     = round(closes[-1] - closes[-2], 2)
+        prev = closes[-2]
+        result['change_pct'] = round((closes[-1] - closes[-2]) / prev * 100, 2) if prev else 0.0
+        return result
+
+    # Secondary: TWSE MI_INDEX API
     dt       = date or get_last_trading_date()
     date_str = dt.strftime('%Y%m%d')
-    result   = {'close': None, 'change': None, 'change_pct': None}
     data     = _twse_get(
         'https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX',
         {'date': date_str, 'response': 'json'},
     )
-    if not data or data.get('stat') != 'OK':
-        return result
+    if data and data.get('stat') == 'OK':
+        rows_to_search: list = []
+        for table in data.get('tables', []):
+            rows_to_search.extend(table.get('data', []))
+        rows_to_search.extend(data.get('data', []))
 
-    # MI_INDEX may use 'tables' list or top-level 'data' — handle both
-    rows_to_search: list = []
-    for table in data.get('tables', []):
-        rows_to_search.extend(table.get('data', []))
-    rows_to_search.extend(data.get('data', []))
+        for row in rows_to_search:
+            if not row:
+                continue
+            name = str(row[0])
+            if '加權' not in name and '發行量' not in name:
+                continue
+            try:
+                close  = _parse_float(row[1])
+                change = _parse_float(row[2])
+                if close and change is not None:
+                    result['close']  = close
+                    result['change'] = change
+                    prev = close - change
+                    result['change_pct'] = round(change / prev * 100, 2) if prev else 0.0
+                    return result
+            except Exception:
+                pass
 
-    for row in rows_to_search:
-        if not row:
-            continue
-        name = str(row[0])
-        if '加權' not in name and '發行量' not in name:
-            continue
-        try:
-            close  = _parse_float(row[1])
-            change = _parse_float(row[2])
-            if close and change is not None:
-                result['close']  = close
-                result['change'] = change
-                prev = close - change
-                result['change_pct'] = round(change / prev * 100, 2) if prev else 0.0
-                break
-        except Exception:
-            pass
-
-    # Fallback: use stooq ^twi (Taiwan Weighted Index)
-    if result['close'] is None:
-        closes = _stooq_get('^twi', rows=5)
-        if closes and len(closes) >= 2:
-            result['close']      = round(closes[-1], 2)
-            result['change']     = round(closes[-1] - closes[-2], 2)
-            prev = closes[-2]
-            result['change_pct'] = round((closes[-1] - closes[-2]) / prev * 100, 2) if prev else 0.0
+    # Last resort: stooq
+    closes = _stooq_get('^twii', rows=5) or _stooq_get('^twi', rows=5)
+    if closes and len(closes) >= 2:
+        result['close']      = round(closes[-1], 2)
+        result['change']     = round(closes[-1] - closes[-2], 2)
+        prev = closes[-2]
+        result['change_pct'] = round((closes[-1] - closes[-2]) / prev * 100, 2) if prev else 0.0
 
     return result
 
