@@ -160,20 +160,28 @@ def fetch_institutional(stock_no: str = '0050', date: datetime = None) -> dict:
     result = {'foreign_net': None, 'site_net': None, 'dealer_net': None, 'total_net': None}
 
     if data and data.get('stat') == 'OK' and data.get('data'):
+        foreign_fini      = None  # pure 外資 (FINI), excluding 陸資
+        foreign_combined  = None  # 外資及陸資 fallback
+
         for row in data['data']:
             if not row:
                 continue
             name = row[0]
             # T86 reports in shares (股); ÷1000 → 張
-            net  = _parse_num(row[3]) // 1000
+            net = _parse_num(row[3]) // 1000
 
-            # 外資及陸資（不含外資自營商）— name contains both '外資' and '陸資'
             if '外資' in name and '自營' not in name and '合計' not in name:
-                result['foreign_net'] = net
+                if '陸資' not in name:
+                    foreign_fini = net          # pure FINI preferred
+                else:
+                    foreign_combined = net      # combined fallback
             elif '投信' in name and '合計' not in name:
                 result['site_net'] = net
             elif '自營商' in name and '小計' not in name and '避險' not in name and '合計' not in name:
                 result['dealer_net'] = net
+
+        # Use pure FINI if available; otherwise fall back to combined figure
+        result['foreign_net'] = foreign_fini if foreign_fini is not None else foreign_combined
 
         nets = [v for v in [result['foreign_net'], result['site_net'], result['dealer_net']] if v is not None]
         result['total_net'] = sum(nets) if nets else None
