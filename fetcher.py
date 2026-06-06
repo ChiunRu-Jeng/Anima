@@ -325,7 +325,17 @@ def fetch_etf_nav(stock_no: str = '0050') -> dict:
     return result
 
 
-# ── 7. 美股夜盤（stooq — 無 rate-limit）─────────────────────────────────────
+# ── 7. 美股夜盤（yfinance → stooq fallback）──────────────────────────────────
+
+def _yf_closes(symbol: str, period: str = '5d') -> list[float] | None:
+    """Fetch closing prices via yfinance (handles cookies/crumbs automatically)."""
+    try:
+        import yfinance as yf
+        hist = yf.Ticker(symbol).history(period=period)
+        return hist['Close'].tolist() if not hist.empty else None
+    except Exception:
+        return None
+
 
 def fetch_us_markets() -> dict:
     result = {
@@ -333,10 +343,12 @@ def fetch_us_markets() -> dict:
         'nasdaq_chg': None, 'nasdaq_close': None,
         'sox_chg':    None, 'sox_close':    None,
     }
-    # stooq symbols: ^SPX = S&P500, ^NDQ = NASDAQ-100, ^SOX = Philadelphia Semi
-    symbols = {'sp500': '^spx', 'nasdaq': '^ndq', 'sox': '^sox'}
-    for key, sym in symbols.items():
-        closes = _stooq_get(sym, rows=5)
+    # Try yfinance first, fall back to stooq
+    yf_symbols   = {'sp500': '^GSPC', 'nasdaq': '^IXIC', 'sox': '^SOX'}
+    stooq_symbols = {'sp500': '^spx', 'nasdaq': '^ndq',  'sox': '^sox'}
+
+    for key in ('sp500', 'nasdaq', 'sox'):
+        closes = _yf_closes(yf_symbols[key]) or _stooq_get(stooq_symbols[key], rows=5)
         if closes and len(closes) >= 2:
             chg = (closes[-1] - closes[-2]) / closes[-2] * 100
             result[f'{key}_chg']   = round(chg, 2)
@@ -344,11 +356,11 @@ def fetch_us_markets() -> dict:
     return result
 
 
-# ── 8. 匯率 USD/TWD（stooq）──────────────────────────────────────────────────
+# ── 8. 匯率 USD/TWD（yfinance → stooq fallback）──────────────────────────────
 
 def fetch_exchange_rate() -> dict:
     result = {'usdtwd': None, 'usdtwd_chg': None}
-    closes = _stooq_get('usdtwd', rows=5)
+    closes = _yf_closes('USDTWD=X') or _stooq_get('usdtwd', rows=5)
     if closes and len(closes) >= 2:
         result['usdtwd']     = round(closes[-1], 3)
         result['usdtwd_chg'] = round(closes[-1] - closes[-2], 3)

@@ -15,17 +15,20 @@ from dataclasses import dataclass, field
 
 @dataclass
 class SignalResult:
-    score:       float
-    action:      str
-    target_buy:  float
-    target_sell: float
-    breakdown:   dict = field(default_factory=dict)
-    summary:     str  = ''
+    score:        float
+    action:       str
+    target_buy:   float
+    target_sell:  float
+    breakdown:    dict = field(default_factory=dict)
+    summary:      str  = ''
+    missing:      list = field(default_factory=list)   # categories with no data
+    data_warning: bool = False                          # True when too many sources missing
 
 
 # ── 1. 美股動能 (20 pts) ─────────────────────────────────────────────────────
 
-def _score_us_markets(us: dict) -> tuple[float, list[str]]:
+def _score_us_markets(us: dict) -> tuple[float, list[str], bool]:
+    """Returns (score, reasons, data_missing)."""
     reasons = []
     score   = 10.0
 
@@ -35,7 +38,7 @@ def _score_us_markets(us: dict) -> tuple[float, list[str]]:
 
     if sp is None and nq is None:
         reasons.append('美股資料無法取得')
-        return score, reasons
+        return score, reasons, True
 
     # Weighted composite (S&P 40%, NASDAQ 35%, SOX 25%)
     comp, wt = 0.0, 0.0
@@ -68,12 +71,12 @@ def _score_us_markets(us: dict) -> tuple[float, list[str]]:
             score -= 3
             reasons.append(f'費半重挫 {sox:+.1f}% → 台積電壓力')
 
-    return max(0, min(20, score)), reasons
+    return max(0, min(20, score)), reasons, False
 
 
 # ── 2. 法人動向 (20 pts) ─────────────────────────────────────────────────────
 
-def _score_institutional(inst: dict, futures: dict, price: dict) -> tuple[float, list[str]]:
+def _score_institutional(inst: dict, futures: dict, price: dict) -> tuple[float, list[str], bool]:
     reasons = []
     score   = 10.0
 
@@ -123,18 +126,19 @@ def _score_institutional(inst: dict, futures: dict, price: dict) -> tuple[float,
     elif dealer < 0:
         score -= 1; reasons.append(f'自營商賣超 {dealer:+,} 張')
 
-    return max(0, min(20, score)), reasons
+    missing = inst.get('foreign_net') is None and inst.get('site_net') is None
+    return max(0, min(20, score)), reasons, missing
 
 
 # ── 3. 技術面 (20 pts) ───────────────────────────────────────────────────────
 
-def _score_technical(tech: dict) -> tuple[float, list[str]]:
+def _score_technical(tech: dict) -> tuple[float, list[str], bool]:
     reasons = []
     score   = 10.0
 
     if not tech:
         reasons.append('技術指標無法計算（歷史資料不足）')
-        return score, reasons
+        return score, reasons, True
 
     k         = tech.get('k')
     d         = tech.get('d')
@@ -192,12 +196,12 @@ def _score_technical(tech: dict) -> tuple[float, list[str]]:
         else:
             reasons.append(f'量能正常 ({vol_ratio:.1f}x均量)')
 
-    return max(0, min(20, score)), reasons
+    return max(0, min(20, score)), reasons, False
 
 
 # ── 4. 大盤趨勢 (15 pts) ─────────────────────────────────────────────────────
 
-def _score_taiex(taiex: dict) -> tuple[float, list[str]]:
+def _score_taiex(taiex: dict) -> tuple[float, list[str], bool]:
     reasons = []
     score   = 7.5
 
@@ -206,7 +210,7 @@ def _score_taiex(taiex: dict) -> tuple[float, list[str]]:
 
     if chg_pct is None:
         reasons.append('大盤資料無法取得')
-        return score, reasons
+        return score, reasons, True
 
     if chg_pct > 1.5:
         score += 7.5; reasons.append(f'大盤強勢 {chg_pct:+.2f}%')
@@ -222,12 +226,12 @@ def _score_taiex(taiex: dict) -> tuple[float, list[str]]:
     if close:
         reasons.append(f'加權指數 {close:,.0f} 點')
 
-    return max(0, min(15, score)), reasons
+    return max(0, min(15, score)), reasons, False
 
 
 # ── 5. 折溢價 (15 pts) ───────────────────────────────────────────────────────
 
-def _score_nav(etf_nav: dict) -> tuple[float, list[str]]:
+def _score_nav(etf_nav: dict) -> tuple[float, list[str], bool]:
     reasons = []
     score   = 7.5
 
@@ -237,7 +241,7 @@ def _score_nav(etf_nav: dict) -> tuple[float, list[str]]:
 
     if pct is None:
         reasons.append('淨值資料無法取得')
-        return score, reasons
+        return score, reasons, True
 
     if pct < -0.3:
         score += 7.5; reasons.append(f'顯著折價 {pct:+.3f}% → 便宜買入機會')
@@ -254,12 +258,12 @@ def _score_nav(etf_nav: dict) -> tuple[float, list[str]]:
     if nav:
         reasons.append(f'NAV={nav:.2f}  收盤={close:.2f}')
 
-    return max(0, min(15, score)), reasons
+    return max(0, min(15, score)), reasons, False
 
 
 # ── 6. 匯率量能 (10 pts) ─────────────────────────────────────────────────────
 
-def _score_fx(fx: dict) -> tuple[float, list[str]]:
+def _score_fx(fx: dict) -> tuple[float, list[str], bool]:
     reasons = []
     score   = 5.0
 
@@ -268,7 +272,7 @@ def _score_fx(fx: dict) -> tuple[float, list[str]]:
 
     if usdtwd_chg is None:
         reasons.append('匯率資料無法取得')
-        return score, reasons
+        return score, reasons, True
 
     if usdtwd_chg < -0.2:
         score += 5; reasons.append(f'新台幣升值 {usdtwd_chg:+.3f} → 外資留台意願高')
@@ -281,7 +285,7 @@ def _score_fx(fx: dict) -> tuple[float, list[str]]:
     else:
         reasons.append(f'匯率平穩 USD/TWD={usdtwd:.3f}')
 
-    return max(0, min(10, score)), reasons
+    return max(0, min(10, score)), reasons, False
 
 
 # ── 價位計算 ──────────────────────────────────────────────────────────────────
@@ -355,17 +359,37 @@ def analyze(price: dict, inst: dict, futures: dict, margin: dict,
 
 def analyze_all(price: dict, inst: dict, futures: dict, margin: dict,
                 etf_nav: dict, tech: dict, us: dict, taiex: dict, fx: dict) -> SignalResult:
-    """Public entry point that routes all data into the scoring functions."""
-    s_us,   r_us   = _score_us_markets(us)
-    s_inst, r_inst = _score_institutional(inst, futures, price)
-    s_tech, r_tech = _score_technical(tech)
-    s_tai,  r_tai  = _score_taiex(taiex)
-    s_nav,  r_nav  = _score_nav(etf_nav)
-    s_fx,   r_fx   = _score_fx(fx)
+    """
+    Public entry point. Returns SignalResult with data_warning=True and
+    a blocked action string when >= 3 critical data sources are unavailable.
+    """
+    s_us,   r_us,   m_us   = _score_us_markets(us)
+    s_inst, r_inst, m_inst = _score_institutional(inst, futures, price)
+    s_tech, r_tech, m_tech = _score_technical(tech)
+    s_tai,  r_tai,  m_tai  = _score_taiex(taiex)
+    s_nav,  r_nav,  m_nav  = _score_nav(etf_nav)
+    s_fx,   r_fx,   m_fx   = _score_fx(fx)
+
+    # Track which categories are missing
+    missing_map = {
+        '美股動能': m_us,
+        '大盤趨勢': m_tai,
+        '折溢價':   m_nav,
+        '匯率量能': m_fx,
+        '法人動向': m_inst,
+        '技術面':   m_tech,
+    }
+    missing = [k for k, v in missing_map.items() if v]
+
+    # Critical categories: 美股、大盤、法人 — if 2+ are missing, warn
+    critical_missing = sum([m_us, m_tai, m_inst])
+    data_warning = critical_missing >= 2 or len(missing) >= 3
 
     total = s_us + s_inst + s_tech + s_tai + s_nav + s_fx
 
-    if total >= 70:
+    if data_warning:
+        action = '⚠️ 資料不足，請手動查核'
+    elif total >= 70:
         action = '強力買入 ✅✅'
     elif total >= 58:
         action = '建議買入 ✅'
@@ -396,5 +420,7 @@ def analyze_all(price: dict, inst: dict, futures: dict, margin: dict,
         target_buy=target_buy,
         target_sell=target_sell,
         breakdown=breakdown,
-        summary=f"綜合評分 {total:.1f}/100 → {action}｜收盤 {close}｜建議掛買 ≤{target_buy}｜建議掛賣 ≥{target_sell}",
+        missing=missing,
+        data_warning=data_warning,
+        summary=f"綜合評分 {total:.1f}/100 → {action}｜收盤 {close}",
     )

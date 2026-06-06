@@ -189,11 +189,24 @@ def print_report(
     print(thn)
     print(f'  總分: {result.score:.1f}/100  {_bar(result.score, 100)}')
     print()
+
+    # ── 資料缺失警告 ─────────────────────────────────────────────
+    if result.data_warning:
+        print('  ' + '!' * (W - 4))
+        print('  !! 關鍵資料缺失，本次評分不可靠，請勿依此操作 !!')
+        if result.missing:
+            print(f'  !! 缺失項目：{", ".join(result.missing)}')
+        print('  ' + '!' * (W - 4))
+        print()
+
     print(f'  🎯  操作建議: {result.action}')
     print()
-    print(f'  💰  建議掛買價: ≤ {result.target_buy}  (NAV 附近或小幅折價)')
-    print(f'  💰  建議掛賣價: ≥ {result.target_sell}')
-    print()
+
+    if not result.data_warning:
+        print(f'  💰  建議掛買價: ≤ {result.target_buy}  (NAV 附近或小幅折價)')
+        print(f'  💰  建議掛賣價: ≥ {result.target_sell}')
+        print()
+
     print('  ⚠️  本報告為量化參考，不構成投資建議，請自行評估風險。')
     print(sep)
     print()
