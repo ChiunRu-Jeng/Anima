@@ -259,36 +259,63 @@ def fetch_taifex_institutional() -> dict:
 # ── 5. 融資融券 ───────────────────────────────────────────────────────────────
 
 def fetch_margin_short(stock_no: str = '0050', date: datetime = None) -> dict:
+    """
+    Try multiple TWSE margin endpoints:
+      1. MI_MARGN  — general board (month-start date)
+      2. MI_MARGN  — exact date fallback
+      3. TWTB4U    — ETF board margin data
+    """
     dt = date or get_last_trading_date()
-    # MI_MARGN returns the whole month when given the 1st of the month
-    date_str = dt.strftime('%Y%m01')
-    data = _twse_get(
-        'https://www.twse.com.tw/rwd/zh/marginShortselling/MI_MARGN',
-        {'date': date_str, 'stockNo': stock_no, 'response': 'json'},
-    )
     result = {
         'margin_buy': None, 'margin_sell': None,
         'margin_balance': None, 'margin_limit': None,
         'short_sell': None, 'short_buy': None,
         'short_balance': None, 'offset': None,
     }
-    if data and data.get('stat') == 'OK' and data.get('data'):
+
+    def _try_parse(data) -> bool:
+        if not (data and data.get('stat') == 'OK' and data.get('data')):
+            return False
         rows = data['data']
-        if rows:
-            row = rows[-1]
-            try:
-                result.update({
-                    'margin_buy':     _parse_num(row[2]),
-                    'margin_sell':    _parse_num(row[3]),
-                    'margin_balance': _parse_num(row[4]),
-                    'margin_limit':   _parse_num(row[5]),
-                    'short_sell':     _parse_num(row[8]),
-                    'short_buy':      _parse_num(row[9]),
-                    'short_balance':  _parse_num(row[10]),
-                    'offset':         _parse_num(row[12]),
-                })
-            except Exception as e:
-                print(f"  [WARN] Margin parse error: {e}")
+        if not rows:
+            return False
+        row = rows[-1]
+        try:
+            result.update({
+                'margin_buy':     _parse_num(row[2]),
+                'margin_sell':    _parse_num(row[3]),
+                'margin_balance': _parse_num(row[4]),
+                'margin_limit':   _parse_num(row[5]),
+                'short_sell':     _parse_num(row[8]),
+                'short_buy':      _parse_num(row[9]),
+                'short_balance':  _parse_num(row[10]),
+                'offset':         _parse_num(row[12]),
+            })
+            return True
+        except (IndexError, Exception):
+            return False
+
+    base = 'https://www.twse.com.tw/rwd/zh/marginShortselling/'
+
+    # Attempt 1: MI_MARGN with month start date
+    data = _twse_get(base + 'MI_MARGN',
+                     {'date': dt.strftime('%Y%m01'), 'stockNo': stock_no, 'response': 'json'})
+    if _try_parse(data):
+        return result
+
+    # Attempt 2: MI_MARGN with exact date
+    data = _twse_get(base + 'MI_MARGN',
+                     {'date': dt.strftime('%Y%m%d'), 'stockNo': stock_no, 'response': 'json'})
+    if _try_parse(data):
+        return result
+
+    # Attempt 3: TWTB4U (ETF board)
+    data = _twse_get(base + 'TWTB4U',
+                     {'date': dt.strftime('%Y%m01'), 'stockNo': stock_no, 'response': 'json'})
+    if _try_parse(data):
+        return result
+
+    print(f'  [WARN] 融資融券三個端點均無資料 (stockNo={stock_no}, date={dt.strftime("%Y%m%d")})')
     return result
 
 
