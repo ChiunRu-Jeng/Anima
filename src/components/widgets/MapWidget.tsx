@@ -22,6 +22,7 @@ export default function MapWidget() {
   const mapRef = useRef<HTMLDivElement>(null)
   const mapInstanceRef = useRef<google.maps.Map | null>(null)
   const markerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null)
+  const markerClassRef = useRef<typeof google.maps.marker.AdvancedMarkerElement | null>(null)
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -42,13 +43,17 @@ export default function MapWidget() {
     })
     mapInstanceRef.current = map
 
+    window.google.maps.importLibrary('marker').then((lib) => {
+      markerClassRef.current = (lib as google.maps.MarkerLibrary).AdvancedMarkerElement
+    })
+
     if (inputRef.current) {
       const ac = new window.google.maps.places.Autocomplete(inputRef.current, {
         fields: ['geometry', 'name', 'formatted_address'],
       })
       autocompleteRef.current = ac
 
-      ac.addListener('place_changed', async () => {
+      ac.addListener('place_changed', () => {
         const p = ac.getPlace()
         if (!p.geometry?.location) return
 
@@ -58,12 +63,12 @@ export default function MapWidget() {
         map.panTo({ lat, lng })
         map.setZoom(15)
 
-        // Remove previous marker
         if (markerRef.current) markerRef.current.map = null
 
-        const { AdvancedMarkerElement } = await window.google.maps.importLibrary('marker') as google.maps.MarkerLibrary
-        const marker = new AdvancedMarkerElement({ map, position: { lat, lng } })
-        markerRef.current = marker
+        const AdvancedMarkerElement = markerClassRef.current
+        if (AdvancedMarkerElement) {
+          markerRef.current = new AdvancedMarkerElement({ map, position: { lat, lng } })
+        }
 
         setPlace({
           name: p.name ?? '',
@@ -86,16 +91,27 @@ export default function MapWidget() {
       return
     }
 
-    window.initGoogleMaps = initMap
+    if (!window.initGoogleMaps) {
+      window.initGoogleMaps = () => {
+        window.dispatchEvent(new Event('google-maps-loaded'))
+      }
+    }
 
-    const script = document.createElement('script')
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${API_KEY}&libraries=places&callback=initGoogleMaps&loading=async`
-    script.async = true
-    script.defer = true
-    document.head.appendChild(script)
+    const handleLoaded = () => initMap()
+    window.addEventListener('google-maps-loaded', handleLoaded)
+
+    const scriptId = 'google-maps-script'
+    if (!document.getElementById(scriptId)) {
+      const script = document.createElement('script')
+      script.id = scriptId
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${API_KEY}&libraries=places&callback=initGoogleMaps&loading=async`
+      script.async = true
+      script.defer = true
+      document.head.appendChild(script)
+    }
 
     return () => {
-      delete window.initGoogleMaps
+      window.removeEventListener('google-maps-loaded', handleLoaded)
     }
   }, [initMap])
 
