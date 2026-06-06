@@ -5,7 +5,7 @@ import { MapPin, Search, X } from 'lucide-react'
 declare global {
   interface Window {
     google: typeof google
-    initGoogleMaps: () => void
+    initGoogleMaps?: () => void
   }
 }
 
