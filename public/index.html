@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Anima — 0050 每日分析工具</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    .card {
+      background: #1a1f2e;
+      border: 1px solid #2d3748;
+      border-radius: 16px;
+      padding: 2.5rem;
+      max-width: 640px;
+      width: 100%;
+    }
+    h1 { font-size: 1.8rem; font-weight: 700; color: #63b3ed; margin-bottom: 0.5rem; }
+    .sub { color: #718096; margin-bottom: 2rem; font-size: 0.95rem; }
+    h2 { font-size: 1rem; font-weight: 600; color: #a0aec0; margin: 1.5rem 0 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .badges { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; }
+    .badge {
+      background: #2d3748;
+      border-radius: 6px;
+      padding: 0.3rem 0.75rem;
+      font-size: 0.82rem;
+      color: #cbd5e0;
+    }
+    pre {
+      background: #0d1117;
+      border: 1px solid #2d3748;
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      font-size: 0.88rem;
+      overflow-x: auto;
+      line-height: 1.7;
+      color: #a8d8a8;
+    }
+    .step { margin-bottom: 1rem; }
+    .step-num {
+      display: inline-block;
+      background: #2b6cb0;
+      color: white;
+      border-radius: 50%;
+      width: 1.5rem;
+      height: 1.5rem;
+      text-align: center;
+      line-height: 1.5rem;
+      font-size: 0.8rem;
+      font-weight: 700;
+      margin-right: 0.5rem;
+    }
+    .scores { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+    .score-item {
+      background: #2d3748;
+      border-radius: 8px;
+      padding: 0.6rem 0.9rem;
+      font-size: 0.85rem;
+    }
+    .score-item span { color: #63b3ed; font-weight: 600; }
+    footer { margin-top: 2rem; color: #4a5568; font-size: 0.8rem; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>📊 Anima</h1>
+    <p class="sub">0050 每日滾動式分析工具 — 整合多維度訊號，給出今日買賣建議與目標價</p>
+
+    <h2>分析涵蓋指標</h2>
+    <div class="badges">
+      <span class="badge">美股 S&P500 / NASDAQ / 費半</span>
+      <span class="badge">外資現貨買賣超</span>
+      <span class="badge">外資台指期未平倉</span>
+      <span class="badge">投信 / 自營商</span>
+      <span class="badge">KD / RSI14 / 均線</span>
+      <span class="badge">ETF 折溢價</span>
+      <span class="badge">USD/TWD 匯率</span>
+      <span class="badge">融資融券</span>
+      <span class="badge">近期新聞</span>
+    </div>
+
+    <h2>評分配置（共 100 分）</h2>
+    <div class="scores">
+      <div class="score-item">美股動能 <span>20 分</span></div>
+      <div class="score-item">法人動向 <span>20 分</span></div>
+      <div class="score-item">技術面 <span>20 分</span></div>
+      <div class="score-item">大盤趨勢 <span>15 分</span></div>
+      <div class="score-item">折溢價 <span>15 分</span></div>
+      <div class="score-item">匯率量能 <span>10 分</span></div>
+    </div>
+
+    <h2>本機執行</h2>
+    <div class="step"><span class="step-num">1</span>下載程式碼</div>
+    <pre>git clone https://github.com/ChiunRu-Jeng/Anima.git
+cd Anima
+git checkout claude/zen-pasteur-0DHcv</pre>
+
+    <div class="step"><span class="step-num">2</span>安裝套件</div>
+    <pre>py -m pip install -r requirements.txt</pre>
+
+    <div class="step"><span class="step-num">3</span>每天下午 2:30 後執行</div>
+    <pre>py main.py</pre>
+
+    <footer>Anima · 本工具為量化參考，不構成投資建議</footer>
+  </div>
+</body>
+</html>
