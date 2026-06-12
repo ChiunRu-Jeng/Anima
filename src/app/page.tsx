@@ -1,4 +1,4 @@
-import { CheckSquare, Flame, Target, CloudSun, TrendingUp, Wallet, BookMarked, GitBranch, Calendar, BarChart3, Share2 } from 'lucide-react'
+import { CheckSquare, Flame, Target, CloudSun, TrendingUp, Wallet, BookMarked, GitBranch, Calendar, BarChart3, Share2, BookOpen } from 'lucide-react'
 import Card from '@/components/ui/Card'
 import ClockWidget from '@/components/widgets/ClockWidget'
 import WeatherWidget from '@/components/widgets/WeatherWidget'
@@ -12,6 +12,7 @@ import ArticleWidget from '@/components/widgets/ArticleWidget'
 import GitHubWidget from '@/components/widgets/GitHubWidget'
 import CalendarWidget from '@/components/widgets/CalendarWidget'
 import FacebookWidget from '@/components/widgets/FacebookWidget'
+import MedicalJournalWidget from '@/components/widgets/MedicalJournalWidget'
 
 export default function Dashboard() {
   return (
@@ -90,11 +91,16 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {/* Row 4: Facebook */}
-        <div className="grid grid-cols-1 gap-4">
-          <Card className="h-[480px]" icon={<Share2 size={14} />} title="Facebook 社群管理">
-            <FacebookWidget />
+        {/* Row 4: Medical Journals + Facebook */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <Card className="h-[340px]" icon={<BookOpen size={14} />} title="醫學期刊資料庫">
+            <MedicalJournalWidget />
           </Card>
+          <div className="lg:col-span-2">
+            <Card className="h-[340px]" icon={<Share2 size={14} />} title="Facebook 社群管理">
+              <FacebookWidget />
+            </Card>
+          </div>
         </div>
 
       </div>
