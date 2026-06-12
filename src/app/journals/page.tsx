@@ -156,7 +156,7 @@ export default function JournalsPage() {
     const paper: MedicalPaper = {
       id:            generateId(),
       title:         form.title.trim(),
-      authors:       form.authors.split(',').map(a => a.trim()).filter(Boolean),
+      authors:       form.authors.split(/[,，]/).map(a => a.trim()).filter(Boolean),
       journal:       form.journal.trim(),
       journalSource: form.journalSource,
       year:          form.year,

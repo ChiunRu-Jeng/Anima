@@ -11,14 +11,26 @@ function detectJournalSource(source: string, fullName: string): JournalSource {
   return 'Other'
 }
 
+function decodeEntities(str: string): string {
+  return str
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&#39;/g, "'")
+}
+
 function extractAbstract(xml: string): string {
   const matches = [...xml.matchAll(/<AbstractText(?:[^>]*Label="([^"]*)")?[^>]*>([\s\S]*?)<\/AbstractText>/g)]
   if (!matches.length) return ''
-  return matches.map(m => {
-    const label = m[1]
-    const text = m[2].replace(/<[^>]+>/g, '').trim()
-    return label ? `${label}: ${text}` : text
-  }).join('\n\n')
+  return decodeEntities(
+    matches.map(m => {
+      const label = m[1]
+      const text = m[2].replace(/<[^>]+>/g, '').trim()
+      return label ? `${label}: ${text}` : text
+    }).join('\n\n')
+  )
 }
 
 export async function GET(req: NextRequest) {
@@ -36,8 +48,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'PubMed unavailable' }, { status: 502 })
   }
 
-  const summary = await summaryRes.value.json()
-  const d = summary.result?.[pmid]
+  const summary = await summaryRes.value.json().catch(() => null)
+  const d = summary?.result?.[pmid]
   if (!d || d.error) {
     return NextResponse.json({ error: 'Paper not found' }, { status: 404 })
   }
