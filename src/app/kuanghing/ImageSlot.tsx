@@ -18,6 +18,9 @@ function subscribe(callback: () => void) {
   return () => window.removeEventListener('storage', callback)
 }
 
+/** Stable server snapshot — no localStorage on the server. */
+const getServerSnapshot = () => null
+
 /**
  * Drag-and-drop image slot — a faithful port of the prototype's <image-slot>.
  * Drop (or browse) a photo and it fills the frame and is saved to localStorage,
@@ -27,17 +30,16 @@ export default function ImageSlot({ id, radius = 18, placeholder, style }: Image
   const storageKey = `kh-img:${id}`
 
   // Persisted value, read SSR-safely from localStorage (null on the server).
-  const persisted = useSyncExternalStore(
-    subscribe,
-    () => {
-      try {
-        return localStorage.getItem(storageKey)
-      } catch {
-        return null
-      }
-    },
-    () => null,
-  )
+  // Memoize getSnapshot so its reference is stable across renders and React
+  // doesn't re-subscribe on every render.
+  const getSnapshot = useCallback(() => {
+    try {
+      return localStorage.getItem(storageKey)
+    } catch {
+      return null
+    }
+  }, [storageKey])
+  const persisted = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 
   // Freshly uploaded image (this session) takes precedence over the snapshot.
   const [override, setOverride] = useState<string | null>(null)
@@ -73,6 +75,12 @@ export default function ImageSlot({ id, radius = 18, placeholder, style }: Image
   return (
     <div
       onClick={() => inputRef.current?.click()}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          inputRef.current?.click()
+        }
+      }}
       onDragOver={(e) => {
         e.preventDefault()
         setDragging(true)

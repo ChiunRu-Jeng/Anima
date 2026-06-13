@@ -785,7 +785,13 @@ export default function KuangHingSite() {
                 <div>
                   <h3 style={{ fontFamily: SERIF, fontSize: 23, fontWeight: 600, margin: '0 0 6px', color: '#2E2A26' }}>免費諮詢預約</h3>
                   <p style={{ fontSize: 14, color: '#8A8175', margin: '0 0 24px' }}>填寫後我們將主動與您聯繫，所有資訊皆嚴格保密。</p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault()
+                      submitForm()
+                    }}
+                    style={{ display: 'flex', flexDirection: 'column', gap: 16 }}
+                  >
                     <label style={fieldLabel}>
                       <span style={labelText}>
                         稱呼 <span style={{ color: '#B05A4A' }}>*</span>
@@ -838,7 +844,7 @@ export default function KuangHingSite() {
                       </div>
                     )}
                     <button
-                      onClick={submitForm}
+                      type="submit"
                       className="kh-cta"
                       style={{
                         marginTop: 4,
@@ -858,7 +864,7 @@ export default function KuangHingSite() {
                     >
                       送出諮詢
                     </button>
-                  </div>
+                  </form>
                 </div>
               )}
             </div>
