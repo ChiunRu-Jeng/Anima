@@ -1,9 +1,13 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  // Two Next apps live in this repo; pin the tracing root to this folder so
-  // file tracing / workspace-root inference doesn't walk up to the parent.
-  outputFileTracingRoot: import.meta.dirname,
+  // This repo also contains the dashboard app (with its own lockfile) one
+  // level up, so Next's automatic workspace-root inference can pick the wrong
+  // root and place build output where Vercel doesn't expect it. Pin Turbopack's
+  // root to THIS app's folder (the fix Next recommends in its warning).
+  turbopack: {
+    root: import.meta.dirname,
+  },
 }
 
 export default nextConfig
