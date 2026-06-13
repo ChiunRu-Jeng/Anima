@@ -9,6 +9,8 @@ interface ImageSlotProps {
   radius?: number
   /** Hint shown inside the empty slot. */
   placeholder?: string
+  /** Optional default image shown until the user drops their own photo. */
+  defaultSrc?: string
   style?: React.CSSProperties
 }
 
@@ -23,10 +25,12 @@ const getServerSnapshot = () => null
 
 /**
  * Drag-and-drop image slot — a faithful port of the prototype's <image-slot>.
- * Drop (or browse) a photo and it fills the frame and is saved to localStorage,
- * so it survives a refresh. Until then it shows a tasteful dashed placeholder.
+ * Shows `defaultSrc` (a tasteful stand-in) until the user drops or browses a
+ * photo, at which point the upload fills the frame and is saved to
+ * localStorage so it survives a refresh. If the default image fails to load,
+ * the slot falls back to the dashed placeholder rather than a broken icon.
  */
-export default function ImageSlot({ id, radius = 18, placeholder, style }: ImageSlotProps) {
+export default function ImageSlot({ id, radius = 18, placeholder, defaultSrc, style }: ImageSlotProps) {
   const storageKey = `kh-img:${id}`
 
   // Persisted value, read SSR-safely from localStorage (null on the server).
@@ -44,9 +48,12 @@ export default function ImageSlot({ id, radius = 18, placeholder, style }: Image
   // Freshly uploaded image (this session) takes precedence over the snapshot.
   const [override, setOverride] = useState<string | null>(null)
   const [dragging, setDragging] = useState(false)
+  const [defaultFailed, setDefaultFailed] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const src = override ?? persisted
+  const uploaded = override ?? persisted
+  const usingDefault = !uploaded && !!defaultSrc && !defaultFailed
+  const src = uploaded ?? (usingDefault ? defaultSrc! : null)
 
   const ingest = useCallback(
     (file: File | undefined) => {
@@ -96,7 +103,7 @@ export default function ImageSlot({ id, radius = 18, placeholder, style }: Image
         cursor: 'pointer',
         borderRadius: radius,
         overflow: 'hidden',
-        background: src ? `#E7DFD0 center/cover no-repeat url(${src})` : '#E7DFD0',
+        background: '#E7DFD0',
         border: src ? '1px solid rgba(50,46,41,0.08)' : '1.5px dashed rgba(94,114,89,0.55)',
         outline: dragging ? '2px solid #5E7259' : 'none',
         outlineOffset: 2,
@@ -104,7 +111,21 @@ export default function ImageSlot({ id, radius = 18, placeholder, style }: Image
         ...style,
       }}
     >
-      {!src && (
+      {src ? (
+        // A plain <img> is intentional: it loads the photo client-side (the
+        // remote stand-ins and user-uploaded data URLs can't go through
+        // next/image's server-side optimizer), and supports onError fallback.
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={src}
+          alt={placeholder ?? ''}
+          onError={() => {
+            // Only the remote default can fail; uploaded data URLs won't.
+            if (usingDefault) setDefaultFailed(true)
+          }}
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+        />
+      ) : (
         <div
           style={{
             position: 'absolute',
@@ -133,21 +154,32 @@ export default function ImageSlot({ id, radius = 18, placeholder, style }: Image
           >
             ❀
           </span>
-          <span style={{ fontSize: 14, lineHeight: 1.6, color: '#7A7268', maxWidth: '22em' }}>
-            {placeholder}
-          </span>
-          <span style={{ fontSize: 13, fontWeight: 500, color: '#5E7259', letterSpacing: 1 }}>
-            拖入照片 · 或點此 browse files
-          </span>
+          <span style={{ fontSize: 14, lineHeight: 1.6, color: '#7A7268', maxWidth: '22em' }}>{placeholder}</span>
+          <span style={{ fontSize: 13, fontWeight: 500, color: '#5E7259', letterSpacing: 1 }}>拖入照片 · 或點此 browse files</span>
         </div>
       )}
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        onChange={(e) => ingest(e.target.files?.[0])}
-        style={{ display: 'none' }}
-      />
+
+      {/* Subtle hint that a stand-in image can be replaced by dropping a photo. */}
+      {src && usingDefault && (
+        <span
+          style={{
+            position: 'absolute',
+            left: 10,
+            bottom: 10,
+            fontSize: 11,
+            letterSpacing: 0.5,
+            color: '#F6F1E9',
+            background: 'rgba(46,42,38,0.55)',
+            padding: '4px 10px',
+            borderRadius: 999,
+            backdropFilter: 'blur(2px)',
+          }}
+        >
+          示意圖 · 拖入照片可替換
+        </span>
+      )}
+
+      <input ref={inputRef} type="file" accept="image/*" onChange={(e) => ingest(e.target.files?.[0])} style={{ display: 'none' }} />
     </div>
   )
 }
