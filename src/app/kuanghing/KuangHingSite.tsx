@@ -78,6 +78,7 @@ export default function KuangHingSite() {
   const [navOpen, setNavOpen] = useState(false)
   const [form, setForm] = useState({ name: '', phone: '', topic: topics[0], message: '' })
   const [submitted, setSubmitted] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [touched, setTouched] = useState(false)
 
@@ -87,7 +88,8 @@ export default function KuangHingSite() {
     setError('')
   }
 
-  const submitForm = () => {
+  const submitForm = async () => {
+    if (submitting) return
     if (!form.name.trim() || !form.phone.trim()) {
       setError('請填寫您的稱呼與聯絡電話，我們才能盡快與您聯繫。')
       setTouched(true)
@@ -98,8 +100,22 @@ export default function KuangHingSite() {
       setTouched(true)
       return
     }
-    setSubmitted(true)
+    setSubmitting(true)
     setError('')
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok || json?.ok === false) throw new Error(json?.error || 'request failed')
+      setSubmitted(true)
+    } catch {
+      setError('送出時發生問題，請直接撥打 24 小時專線 0921-223-518，或稍後再試。')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const resetForm = () => {
@@ -860,6 +876,7 @@ export default function KuangHingSite() {
                     <button
                       type="submit"
                       className="kh-cta"
+                      disabled={submitting}
                       style={{
                         marginTop: 4,
                         background: '#5E7259',
@@ -871,12 +888,13 @@ export default function KuangHingSite() {
                         fontSize: 16,
                         fontWeight: 500,
                         letterSpacing: 1,
-                        cursor: 'pointer',
+                        cursor: submitting ? 'wait' : 'pointer',
+                        opacity: submitting ? 0.7 : 1,
                         boxShadow: '0 10px 24px rgba(94,114,89,0.3)',
-                        transition: 'background .2s, transform .2s',
+                        transition: 'background .2s, transform .2s, opacity .2s',
                       }}
                     >
-                      送出諮詢
+                      {submitting ? '送出中…' : '送出諮詢'}
                     </button>
                   </form>
                 </div>
