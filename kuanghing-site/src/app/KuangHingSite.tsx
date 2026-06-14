@@ -16,7 +16,7 @@ const navItems = [
 ]
 
 const values = [
-  { stat: '30＋', title: '年專業經驗', desc: '深耕美濃在地服務' },
+  { stat: '60＋', title: '年專業經驗', desc: '深耕美濃在地服務' },
   { stat: '24h', title: '全天候待命', desc: '緊急需求即時回應' },
   { stat: '全程', title: '一條龍服務', desc: '接體到後續關懷' },
   { stat: '用心', title: '同理心陪伴', desc: '傾聽每個家庭需求' },
@@ -327,7 +327,7 @@ export default function KuangHingSite() {
       >
         <div style={{ flex: '1 1 420px', minWidth: 300 }}>
           <span style={{ display: 'inline-block', fontSize: 13, letterSpacing: 4, color: '#5E7259', fontWeight: 500, marginBottom: 22 }}>
-            三十年深耕 · 在地美濃
+            六十年深耕 · 在地美濃
           </span>
           <h1
             style={{
@@ -689,7 +689,7 @@ export default function KuangHingSite() {
               關於廣興禮儀
             </h2>
             <p style={{ fontSize: 17, color: '#6A6258', margin: '0 0 18px' }}>
-              三十年來，廣興禮儀深耕於高雄美濃，陪伴無數家庭走過人生中最艱難的時刻。我們深信，殯葬服務不只是流程的安排，更是一份對生命的敬重與對家屬的溫柔守護。
+              六十年來，廣興禮儀深耕於高雄美濃，陪伴無數家庭走過人生中最艱難的時刻。我們深信，殯葬服務不只是流程的安排，更是一份對生命的敬重與對家屬的溫柔守護。
             </p>
             <p style={{ fontSize: 17, color: '#6A6258', margin: '0 0 30px' }}>
               以同理心傾聽每一個家庭的需求，用專業與真誠，協助每一位摯愛的親人，有尊嚴地走完人生最後一程。
