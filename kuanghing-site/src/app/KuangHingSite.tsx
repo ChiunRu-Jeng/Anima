@@ -689,10 +689,13 @@ export default function KuangHingSite() {
               關於廣興禮儀
             </h2>
             <p style={{ fontSize: 17, color: '#6A6258', margin: '0 0 18px' }}>
-              六十年來，廣興禮儀深耕於高雄美濃，陪伴無數家庭走過人生中最艱難的時刻。我們深信，殯葬服務不只是流程的安排，更是一份對生命的敬重與對家屬的溫柔守護。
+              廣興禮儀公司創立於民國年間，由創辦人黃金木先生秉持著「以愛為本、以禮為尊」的信念，從一間小小的禮儀服務處開始，逐步發展成為在地備受信賴的專業禮儀公司。
+            </p>
+            <p style={{ fontSize: 17, color: '#6A6258', margin: '0 0 18px' }}>
+              一甲子，我們深信每一個生命都值得被最後的尊重與溫柔對待。無論是傳統中式禮儀、基督教追思禮拜，或是佛教法會，我們都以最專業的態度與最溫暖的心，為每一個家屬量身打造最適切的告別儀式。
             </p>
             <p style={{ fontSize: 17, color: '#6A6258', margin: '0 0 30px' }}>
-              以同理心傾聽每一個家庭的需求，用專業與真誠，協助每一位摯愛的親人，有尊嚴地走完人生最後一程。
+              從臨終關懷到後續祭祀，從靈堂佈置到追思會館，廣興禮儀的每一位夥伴都經過嚴格的專業訓練。我們不只是服務提供者，更是您在最艱難時刻的陪伴者。
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 18 }}>
               {aboutValues.map((a) => (
@@ -782,7 +785,7 @@ export default function KuangHingSite() {
               <div style={{ flex: '1 1 200px' }}>
                 <div style={{ fontSize: 12, letterSpacing: 2, color: '#06C755', fontWeight: 700, marginBottom: 6 }}>LINE 線上諮詢</div>
                 <div style={{ fontSize: 15, color: 'rgba(241,236,227,0.78)', lineHeight: 1.7, marginBottom: 14 }}>
-                  掃描 QR code，或於 LINE 搜尋手機號碼 <b style={{ color: '#F1ECE3' }}>0975076798</b> 加入好友。
+                  掃描 QR code，或於 LINE 搜尋手機號碼 <b style={{ color: '#F1ECE3' }}>0975-076-798</b> 加入好友。
                 </div>
                 <a
                   href="https://line.me/ti/p/OBmhHQJLPI"
@@ -994,7 +997,7 @@ export default function KuangHingSite() {
           </div>
           <div style={{ fontSize: 13.5, lineHeight: 1.9, textAlign: 'right' }}>
             <div>24 小時專線　0921-223-518</div>
-            <div>LINE　0975076798</div>
+            <div>LINE　0975-076-798</div>
             <div>高雄市美濃區合和里東門街72號</div>
             <div>4051Y016@gmail.com</div>
           </div>
