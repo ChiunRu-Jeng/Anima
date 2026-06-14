@@ -167,17 +167,20 @@ export default function KuangHingSite() {
           <a href="#top" style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none', color: 'inherit' }}>
             <span
               style={{
-                width: 42,
-                height: 42,
+                width: 48,
+                height: 48,
                 borderRadius: '50%',
-                background: '#5E7259',
+                background: '#fff',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 flexShrink: 0,
+                overflow: 'hidden',
+                border: '1px solid rgba(50,46,41,0.10)',
               }}
             >
-              <span style={{ fontFamily: SERIF, fontWeight: 700, fontSize: 22, color: '#F6F1E9', lineHeight: 1 }}>廣</span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo.jpg" alt="廣興禮儀公司 LOGO" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             </span>
             <span style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15 }}>
               <span style={{ fontFamily: SERIF, fontWeight: 700, fontSize: 20, letterSpacing: 2, color: '#2E2A26' }}>廣興禮儀</span>
@@ -418,7 +421,7 @@ export default function KuangHingSite() {
             radius={18}
             defaultSrc={IMG.hero}
             placeholder="拖入主視覺照片（建議：晨光、蓮花、寧靜自然場景）"
-            style={{ width: '100%', aspectRatio: '4 / 5', boxShadow: '0 30px 70px -30px rgba(50,46,41,0.4)' }}
+            style={{ width: '100%', aspectRatio: '1 / 1', boxShadow: '0 30px 70px -30px rgba(50,46,41,0.4)' }}
           />
         </div>
       </section>
@@ -921,16 +924,19 @@ export default function KuangHingSite() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             <span
               style={{
-                width: 44,
-                height: 44,
+                width: 48,
+                height: 48,
                 borderRadius: '50%',
-                background: '#5E7259',
+                background: '#fff',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                flexShrink: 0,
+                overflow: 'hidden',
               }}
             >
-              <span style={{ fontFamily: SERIF, fontWeight: 700, fontSize: 22, color: '#F6F1E9' }}>廣</span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo.jpg" alt="廣興禮儀公司 LOGO" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             </span>
             <div style={{ lineHeight: 1.4 }}>
               <div style={{ fontFamily: SERIF, fontSize: 19, fontWeight: 600, letterSpacing: 2, color: '#F1ECE3' }}>廣興禮儀公司</div>
