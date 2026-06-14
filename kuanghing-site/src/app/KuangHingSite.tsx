@@ -62,14 +62,13 @@ const aboutValues = [
 
 const topics = ['全程禮儀服務', '生前契約', '追思會館租借', '治喪流程諮詢', '其他需求']
 
-// Tasteful, free-licensed stand-in imagery from Wikimedia Commons (CC BY-SA),
-// loaded directly by the visitor's browser. These are placeholders — the
-// company should drop in its own real photos (which override and persist).
+// Real service photos provided by the company (in /public). Each image slot
+// still supports drag-and-drop to override and persist a different photo.
 const IMG = {
-  hero: 'https://commons.wikimedia.org/wiki/Special:FilePath/Lotus%20flower%20(978659).jpg?width=1200',
-  contract: 'https://commons.wikimedia.org/wiki/Special:FilePath/408Radus%20White%20chrysanthemums%2014.jpg?width=1200',
-  hall: 'https://commons.wikimedia.org/wiki/Special:FilePath/Candle%20in%20the%20dark.JPG?width=1000',
-  about: 'https://commons.wikimedia.org/wiki/Special:FilePath/Meinong%20East%20Gate%20Tower%20front%20view%2020150124.jpg?width=1200',
+  hero: '/hero.jpg',
+  contract: '/contract.jpg',
+  hall: '/hall.jpg',
+  about: '/about.jpg',
 }
 
 const SECTION_PAD = 'clamp(60px, 8vw, 100px) clamp(20px, 4vw, 48px)'
