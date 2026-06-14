@@ -760,6 +760,55 @@ export default function KuangHingSite() {
                 </div>
               </a>
             </div>
+
+            {/* LINE 線上諮詢 */}
+            <div
+              style={{
+                marginTop: 30,
+                background: 'rgba(6,199,85,0.08)',
+                border: '1px solid rgba(6,199,85,0.28)',
+                borderRadius: 16,
+                padding: 22,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 20,
+                flexWrap: 'wrap',
+              }}
+            >
+              <span style={{ background: '#fff', borderRadius: 12, padding: 8, lineHeight: 0, flexShrink: 0 }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/line-qr.jpg" alt="廣興禮儀 LINE QR code" width={118} height={118} style={{ display: 'block', width: 118, height: 118 }} />
+              </span>
+              <div style={{ flex: '1 1 200px' }}>
+                <div style={{ fontSize: 12, letterSpacing: 2, color: '#06C755', fontWeight: 700, marginBottom: 6 }}>LINE 線上諮詢</div>
+                <div style={{ fontSize: 15, color: 'rgba(241,236,227,0.78)', lineHeight: 1.7, marginBottom: 14 }}>
+                  掃描 QR code，或於 LINE 搜尋手機號碼 <b style={{ color: '#F1ECE3' }}>0975076798</b> 加入好友。
+                </div>
+                <a
+                  href="https://line.me/ti/p/OBmhHQJLPI"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="kh-lift"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    background: '#06C755',
+                    color: '#fff',
+                    padding: '12px 26px',
+                    borderRadius: 999,
+                    fontWeight: 600,
+                    fontSize: 15,
+                    letterSpacing: 1,
+                    textDecoration: 'none',
+                    boxShadow: '0 8px 20px rgba(6,199,85,0.3)',
+                    transition: 'transform .2s',
+                  }}
+                >
+                  ＋ 加 LINE 好友
+                </a>
+              </div>
+            </div>
           </div>
 
           {/* form */}
@@ -945,6 +994,7 @@ export default function KuangHingSite() {
           </div>
           <div style={{ fontSize: 13.5, lineHeight: 1.9, textAlign: 'right' }}>
             <div>24 小時專線　0921-223-518</div>
+            <div>LINE　0975076798</div>
             <div>高雄市美濃區合和里東門街72號</div>
             <div>4051Y016@gmail.com</div>
           </div>
