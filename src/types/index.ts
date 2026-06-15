@@ -74,3 +74,24 @@ export interface WatchlistItem {
   symbol: string
   type: 'stock' | 'crypto'
 }
+
+export type JournalSource = 'JAMA' | 'NEJM' | 'Lancet' | 'BMJ' | 'Nature Medicine' | 'Other'
+
+export interface MedicalPaper {
+  id: string
+  title: string
+  authors: string[]
+  journal: string
+  journalSource: JournalSource
+  year: number
+  volume?: string
+  issue?: string
+  pages?: string
+  doi?: string
+  pmid?: string
+  url?: string
+  abstract?: string
+  tags: string[]
+  notes?: string
+  createdAt: string
+}
